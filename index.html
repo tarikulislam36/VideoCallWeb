@@ -1,99 +1,38 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <title>PeerJS Random Video Call Example</title>
+    <meta charset="UTF-8">
+    <title>WebSocket Client</title>
 </head>
-
 <body>
-    <h1>PeerJS Random Video Call Example</h1>
-
-    <input type="text" id="localpeerId" readonly style="width: 90%;">
-    <br><br>
-    <video id="localVideo" autoplay playsinline style="max-width: 300px;"></video>
-    <video id="remoteVideo" autoplay playsinline style="max-width: 300px;"></video>
-    <div>
-        <button onclick="startRandomCall()">Start Random Call</button>
-    </div>
-
-    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
+    <h1>WebSocket Client</h1>
     <script>
-        const localVideo = document.getElementById('localVideo');
-        const remoteVideo = document.getElementById('remoteVideo');
-        const inputLocalPeerId = document.getElementById("localpeerId");
+        // Create a new WebSocket connection to the server
+        const socket = new WebSocket('ws://localhost:3000');
 
-        const peer = new Peer();
+        // Connection opened
+        socket.onopen = () => {
+            console.log('Connected to the server');
 
-        peer.on('open', (id) => {
-            console.log('My peer ID is: ' + id);
-            inputLocalPeerId.value = id;
-
-            // Notify the signaling server that this peer is ready for a random call
-            signalingSocket.send(JSON.stringify({ type: 'ready', peerId: id }));
-        });
-
-        peer.on('error', (error) => {
-            console.log('Error: ' + error);
-        });
-
-        const getUserMedia = navigator.mediaDevices.getUserMedia;
-
-        getUserMedia({ video: true, audio: true }).then((stream) => {
-            // Show local video
-            localVideo.srcObject = stream;
-
-            peer.on('call', (call) => {
-                call.answer(stream); // Answer the call with an A/V stream.
-                call.on('stream', (remoteStream) => {
-                    // Show remote video
-                    remoteVideo.srcObject = remoteStream;
-                });
-            });
-        }).catch((err) => {
-            console.log('Failed to get local stream', err);
-        });
-
-        // Connect to the signaling server
-        const signalingSocket = new WebSocket('ws://localhost:3000');
-
-        signalingSocket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-
-            if (data.type === 'offer') {
-                // If matched, call the provided peer ID
-                callPeer(data.peerId);
-            }
+            // Send a JSON message to the server
+            const message = JSON.stringify({ type: 'introduction', payload: 'Hello, Server!' });
+            socket.send(message);
         };
 
-        signalingSocket.onclose = () => {
-            console.log('Disconnected from signaling server');
+        // Listen for messages from the server
+        socket.onmessage = (event) => {
+            const receivedMessage = JSON.parse(event.data);
         };
 
-        signalingSocket.onerror = (error) => {
+        // Handle connection closed
+        socket.onclose = () => {
+            console.log('Disconnected from the server');
+        };
+
+        // Handle errors
+        socket.onerror = (error) => {
             console.error('WebSocket error:', error);
-        };
-
-        const callPeer = (peerId) => {
-            getUserMedia({ video: true, audio: true }).then((stream) => {
-                const call = peer.call(peerId, stream);
-                call.on('stream', (remoteStream) => {
-                    // Show remote video
-                    remoteVideo.srcObject = remoteStream;
-                });
-            }).catch((err) => {
-                console.log('Failed to get local stream', err);
-            });
-        };
-
-        // Function to initiate a random call
-        const startRandomCall = () => {
-            if (peer.id) {
-                signalingSocket.send(JSON.stringify({ type: 'ready', peerId: peer.id }));
-            } else {
-                console.log('Peer ID is not ready yet.');
-            }
         };
     </script>
 </body>
-
 </html>

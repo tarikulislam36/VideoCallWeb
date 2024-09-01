@@ -42,7 +42,7 @@
         <video id="remoteVideo" class="w-full h-full object-cover" autoplay playsinline></video>
         <!-- Placeholder image if video is not available -->
         <!-- <img src="your-video-placeholder.png" alt="Remote Video" class="w-full h-full object-cover" /> -->
-        <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <div class="absolute inset-0 flex flex-col items-center justify-center" id="LoadScreen">
           <h1 class="text-3xl font-bold text-orange-500">omegle</h1>
           <p class="text-white mt-2">Finding an available...</p>
           <div class="flex mt-2 space-x-1">
@@ -57,23 +57,128 @@
 
       <!-- Local Video -->
       <div class="video-container w-full h-1/2">
-        <video id="localVideo" class="w-full h-full object-cover" autoplay muted playsinline></video>
+        <video id="localVideo" class="w-full h-full object-cover bg-gray-800" autoplay muted playsinline></video>
         <!-- Placeholder image if video is not available -->
         <!-- <img src="your-video-placeholder.png" alt="Local Video" class="w-full h-full object-cover" /> -->
       </div>
     </div>
 
     <!-- Footer Buttons -->
-    <div class="bg-gray-800 flex justify-between items-center p-4">
+    <div class="bg-gray-800 flex justify-between items-center p-4 ">
       <button class="flex items-center text-white">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m4-4H9m4 8H9m10 8H4V4m16 0v16z" />
         </svg>
         Message...
       </button>
-      <button class="bg-red-600 text-white py-2 px-4 rounded-full focus:outline-none">Stop</button>
+      <button class="bg-red-600 text-white py-2 px-4 rounded-full focus:outline-none" onclick="nextCall()">Stop</button>
+    </div>
+    <div class="flex justify-center items-center mt-4">
+      <code class="text-white"></code>
     </div>
   </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.3.1/dist/peerjs.min.js"></script>
+  <script>
+    const socket = new WebSocket('ws://localhost:8080');
+    let localStream;
+    let peer;
+    let currentCall;
+
+    socket.onopen = () => {
+        console.log('WebSocket connection established');
+        initializePeer();
+    };
+
+    socket.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        if (message.type === 'ConnectToPeer') {
+            callPeer(message.UserID);
+        } else if (message.type === 'NextCall') {
+            resetCall(); // Reset for both users
+            findNewUser(); // Find a new user to connect to
+        }
+    };
+
+    function initializePeer() {
+        peer = new Peer();
+
+        peer.on('open', (id) => {
+            console.log('My peer ID is: ' + id);
+            socket.send(JSON.stringify({ type: 'NewUser', UserID: id }));
+            // Initialize the local stream when the peer connection is opened
+            initializeLocalStream();
+        });
+
+        peer.on('call', (call) => {
+            answerCall(call);
+        });
+
+        peer.on('error', (error) => {
+            console.error('Peer error:', error);
+        });
+    }
+
+    function initializeLocalStream() {
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then((stream) => {
+                localStream = stream;
+                document.getElementById('localVideo').srcObject = localStream;
+            })
+            .catch((err) => console.error('Failed to get local stream', err));
+    }
+
+    function answerCall(call) {
+        call.answer(localStream); // Use the already initialized local stream
+
+        call.on('stream', (remoteStream) => {
+            document.getElementById('remoteVideo').srcObject = remoteStream;
+            document.getElementById('LoadScreen').style.display = 'none'; // Hide loading screen
+        });
+
+        call.on('close', () => {
+            console.log('Call ended');
+            resetCall();
+        });
+
+        currentCall = call;
+    }
+
+    function callPeer(peerId) {
+        console.log('Calling peer:', peerId);
+        currentCall = peer.call(peerId, localStream);
+
+        currentCall.on('stream', (remoteStream) => {
+            document.getElementById('remoteVideo').srcObject = remoteStream;
+        });
+
+        currentCall.on('close', () => {
+            console.log('Call ended');
+            resetCall();
+        });
+    }
+
+    function nextCall() {
+        if (currentCall) {
+            currentCall.close(); // Close the current call
+        }
+        resetCall();  // Reset remote video elements after closing the call
+        socket.send(JSON.stringify({ type: 'NextCall', UserID: peer.id }));
+    }
+
+    function resetCall() {
+        document.getElementById('remoteVideo').srcObject = null; // Only reset remote video
+        currentCall = null;
+    }
+
+    function findNewUser() {
+        // Logic to find a new user to connect to
+        socket.send(JSON.stringify({ type: 'FindNewUser', UserID: peer.id }));
+    }
+</script>
+
+</script>
+
 </body>
 
 </html>

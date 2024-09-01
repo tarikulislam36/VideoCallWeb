@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Video Call</title>
+    <style>
+        #localVideo, #remoteVideo {
+            width: 45%;
+            height: auto;
+            display: inline-block;
+            background-color: black; /* Ensure video elements are black when no stream */
+        }
+        #controls {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Random Video Call</h1>
+    <video id="localVideo" autoplay muted></video>
+    <video id="remoteVideo" autoplay></video>
+    <div id="controls">
+        <button onclick="nextCall()">Next</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.3.1/dist/peerjs.min.js"></script>
+    <script>
+        const socket = new WebSocket('ws://localhost:8080');
+        let localStream;
+        let peer;
+        let currentCall;
+
+        socket.onopen = () => {
+            console.log('WebSocket connection established');
+            initializePeer();
+        };
+
+        socket.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            if (message.type === 'ConnectToPeer') {
+                callPeer(message.UserID);
+            } else if (message.type === 'NextCall') {
+                resetCall(); // Reset for both users
+                findNewUser(); // Find a new user to connect to
+            }
+        };
+
+        function initializePeer() {
+            peer = new Peer();
+
+            peer.on('open', (id) => {
+                console.log('My peer ID is: ' + id);
+                socket.send(JSON.stringify({ type: 'NewUser', UserID: id }));
+            });
+
+            peer.on('call', (call) => {
+                answerCall(call);
+            });
+
+            peer.on('error', (error) => {
+                console.error('Peer error:', error);
+            });
+        }
+
+        function answerCall(call) {
+            navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                .then((stream) => {
+                    localStream = stream;
+                    document.getElementById('localVideo').srcObject = localStream;
+                    call.answer(localStream);
+
+                    call.on('stream', (remoteStream) => {
+                        document.getElementById('remoteVideo').srcObject = remoteStream;
+                    });
+
+                    call.on('close', () => {
+                        console.log('Call ended');
+                        resetCall();
+                    });
+
+                    currentCall = call;
+                })
+                .catch((err) => console.error('Failed to get local stream', err));
+        }
+
+        function callPeer(peerId) {
+            console.log('Calling peer:', peerId);
+            navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                .then((stream) => {
+                    localStream = stream;
+                    document.getElementById('localVideo').srcObject = localStream;
+                    currentCall = peer.call(peerId, localStream);
+
+                    currentCall.on('stream', (remoteStream) => {
+                        document.getElementById('remoteVideo').srcObject = remoteStream;
+                    });
+
+                    currentCall.on('close', () => {
+                        console.log('Call ended');
+                        resetCall();
+                    });
+                })
+                .catch((err) => console.error('Failed to get local stream', err));
+        }
+
+        function nextCall() {
+            if (currentCall) {
+                currentCall.close(); // Close the current call
+            }
+            resetCall();  // Reset video elements after closing the call
+            socket.send(JSON.stringify({ type: 'NextCall', UserID: peer.id }));
+        }
+
+        function resetCall() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+
+            document.getElementById('localVideo').srcObject = null;
+            document.getElementById('remoteVideo').srcObject = null;
+
+            // Set the video elements to black by assigning a black background color
+            document.getElementById('localVideo').style.backgroundColor = 'black';
+            document.getElementById('remoteVideo').style.backgroundColor = 'black';
+
+            currentCall = null;
+        }
+
+        function findNewUser() {
+            // Logic to find a new user to connect to
+            socket.send(JSON.stringify({ type: 'FindNewUser', UserID: peer.id }));
+        }
+    </script>
+</body>
+</html>

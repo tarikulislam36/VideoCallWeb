@@ -1,45 +1,53 @@
 const WebSocket = require('ws');
 
-const server = new WebSocket.Server({ port: 3000 });
-const clients = [];
+const wss = new WebSocket.Server({ port: 8080 });
+const availableUsers = new Set();
 
-server.on('connection', (socket) => {
-    console.log('New client connected');
-    clients.push(socket);
-
-    socket.on('message', (message) => {
+wss.on('connection', (ws) => {
+    ws.on('message', (message) => {
         const data = JSON.parse(message);
-        
-        // When a client is ready to connect (wants to make a random call)
-        if (data.type === 'ready') {
-            // Find a random client that is not the current one and is not in a call
-            const availableClients = clients.filter(client => client !== socket && client.readyState === WebSocket.OPEN);
-            const randomClient = availableClients[Math.floor(Math.random() * availableClients.length)];
-            
-            if (randomClient) {
-                // Send the current client's Peer ID to the random client
-                randomClient.send(JSON.stringify({ type: 'offer', peerId: data.peerId }));
 
-                // Send the random client's Peer ID to the current client
-                socket.send(JSON.stringify({ type: 'offer', peerId: randomClient.peerId }));
-            } else {
-                // If no other clients are available, wait for another client to connect
-                console.log('No available clients to connect.');
-            }
+        switch (data.type) {
+            case 'NewUser':
+                ws.userId = data.UserID;
+                availableUsers.add(ws);
+                findAndConnectUsers();
+                break;
+            case 'NextCall':
+                handleNextCall(ws);
+                break;
+            case 'FindNewUser':
+                availableUsers.add(ws);
+                findAndConnectUsers();
+                break;
         }
     });
 
-    socket.on('close', () => {
-        console.log('Client disconnected');
-        const index = clients.indexOf(socket);
-        if (index !== -1) {
-            clients.splice(index, 1);
-        }
-    });
-
-    socket.on('error', (error) => {
-        console.error('WebSocket error:', error);
+    ws.on('close', () => {
+        availableUsers.delete(ws);
     });
 });
 
-console.log('WebSocket signaling server is running on ws://localhost:3000');
+function findAndConnectUsers() {
+    if (availableUsers.size >= 2) {
+        const [user1, user2] = availableUsers;
+        availableUsers.delete(user1);
+        availableUsers.delete(user2);
+
+        const user1Id = user1.userId;
+        const user2Id = user2.userId;
+
+        user1.send(JSON.stringify({ type: 'ConnectToPeer', UserID: user2Id }));
+        user2.send(JSON.stringify({ type: 'ConnectToPeer', UserID: user1Id }));
+    }
+}
+
+function handleNextCall(ws) {
+    // Notify the other user to reset their call and find a new connection
+    ws.send(JSON.stringify({ type: 'NextCall' }));
+
+    // Add the user back to the available list and find new users to connect with
+    availableUsers.add(ws);
+
+    findAndConnectUsers();
+}
