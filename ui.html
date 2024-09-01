@@ -8,6 +8,7 @@
   <title>Video Call UI</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.2.7/dist/tailwind.min.css" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/6.1.4/adapter.js" integrity="sha512-r8cn1OoZ21KHc0zmav3+MtQS24AJLAaDdNNWYkOborAznLETtfBKMb6xkpqXnjcH1GmKG9BqPOW9tU/Jzy98kQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <style>
     .bg-beige {
       background-color: #f8f4e3; /* Custom beige background */
@@ -20,8 +21,8 @@
   </style>
 </head>
 
-<body class=" flex items-center justify-center h-screen">
-  <div class="max-w-sm w-full h-full mx-auto  text-white flex flex-col justify-between">
+<body class="bg-black flex items-center justify-center h-screen">
+  <div class="max-w-sm w-full h-full mx-auto bg-black text-white flex flex-col justify-between">
     <!-- Header Buttons -->
     <div class="flex justify-between items-center p-4">
       <div class="flex space-x-2">
@@ -39,7 +40,7 @@
     <div class="flex-1 flex flex-col items-center">
       <!-- Remote Video -->
       <div class="video-container w-full h-1/2 mb-2">
-        <video id="remoteVideo" class="w-96 h-96 object-cover" autoplay playsinline></video>
+        <video id="remoteVideo" class="w-full h-full object-cover" autoplay playsinline></video>
         <!-- Placeholder image if video is not available -->
         <!-- <img src="your-video-placeholder.png" alt="Remote Video" class="w-full h-full object-cover" /> -->
         <div class="absolute inset-0 flex flex-col items-center justify-center" id="LoadScreen">
@@ -57,7 +58,7 @@
 
       <!-- Local Video -->
       <div class="video-container w-full h-1/2">
-        <video id="localVideo" class="w-96 h-96 object-cover" autoplay muted playsinline></video>
+        <video id="localVideo" class="w-full h-full object-cover" autoplay muted playsinline></video>
         <!-- Placeholder image if video is not available -->
         <!-- <img src="your-video-placeholder.png" alt="Local Video" class="w-full h-full object-cover" /> -->
       </div>
