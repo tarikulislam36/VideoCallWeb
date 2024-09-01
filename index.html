@@ -21,7 +21,12 @@
 
         // Listen for messages from the server
         socket.onmessage = (event) => {
-            const receivedMessage = JSON.parse(event.data);
+            try {
+                const receivedMessage = JSON.parse(event.data);
+                console.log('Received from server:', receivedMessage);
+            } catch (error) {
+                console.error('Error parsing JSON:', error);
+            }
         };
 
         // Handle connection closed
