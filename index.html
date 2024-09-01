@@ -2,35 +2,34 @@
 <html>
 
 <head>
-    <title>Random Video Call Example</title>
+    <title>PeerJS Random Video Call Example</title>
 </head>
 
 <body>
-    <h1>Random Video Call Example</h1>
+    <h1>PeerJS Random Video Call Example</h1>
 
-    <input type="text" name="localpeerId" id="localpeerId" readonly style="width: 90%;">
+    <input type="text" id="localpeerId" readonly style="width: 90%;">
     <br><br>
     <video id="localVideo" autoplay playsinline style="max-width: 300px;"></video>
     <video id="remoteVideo" autoplay playsinline style="max-width: 300px;"></video>
     <div>
-        <button onclick="joinQueue()">Join Video Chat Queue</button>
-        <button onclick="disconnectCall()">Disconnect</button>
+        <button onclick="startRandomCall()">Start Random Call</button>
     </div>
 
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
-    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
     <script>
         const localVideo = document.getElementById('localVideo');
         const remoteVideo = document.getElementById('remoteVideo');
-        const inputlocalpeerId = document.getElementById("localpeerId");
+        const inputLocalPeerId = document.getElementById("localpeerId");
 
-        const socket = io('http://localhost:3000'); // Connect to Socket.IO server
         const peer = new Peer();
 
         peer.on('open', (id) => {
             console.log('My peer ID is: ' + id);
-            inputlocalpeerId.value = id;
-            socket.emit('joinQueue', id); // Emit joinQueue event to server
+            inputLocalPeerId.value = id;
+
+            // Notify the signaling server that this peer is ready for a random call
+            signalingSocket.send(JSON.stringify({ type: 'ready', peerId: id }));
         });
 
         peer.on('error', (error) => {
@@ -39,17 +38,14 @@
 
         const getUserMedia = navigator.mediaDevices.getUserMedia;
 
-        let localStream;
-        let currentCall;
-
         getUserMedia({ video: true, audio: true }).then((stream) => {
-            localStream = stream;
+            // Show local video
             localVideo.srcObject = stream;
 
             peer.on('call', (call) => {
-                currentCall = call;
-                call.answer(localStream); // Answer the call with an A/V stream.
+                call.answer(stream); // Answer the call with an A/V stream.
                 call.on('stream', (remoteStream) => {
+                    // Show remote video
                     remoteVideo.srcObject = remoteStream;
                 });
             });
@@ -57,33 +53,46 @@
             console.log('Failed to get local stream', err);
         });
 
-        socket.on('callPeer', (remotePeerId) => {
-            // Called when a peer is matched
-            const call = peer.call(remotePeerId, localStream);
-            currentCall = call;
-            call.on('stream', (remoteStream) => {
-                remoteVideo.srcObject = remoteStream;
+        // Connect to the signaling server
+        const signalingSocket = new WebSocket('ws://localhost:3000');
+
+        signalingSocket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+
+            if (data.type === 'offer') {
+                // If matched, call the provided peer ID
+                callPeer(data.peerId);
+            }
+        };
+
+        signalingSocket.onclose = () => {
+            console.log('Disconnected from signaling server');
+        };
+
+        signalingSocket.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
+
+        const callPeer = (peerId) => {
+            getUserMedia({ video: true, audio: true }).then((stream) => {
+                const call = peer.call(peerId, stream);
+                call.on('stream', (remoteStream) => {
+                    // Show remote video
+                    remoteVideo.srcObject = remoteStream;
+                });
+            }).catch((err) => {
+                console.log('Failed to get local stream', err);
             });
-        });
+        };
 
-        function joinQueue() {
-            socket.emit('joinQueue', peer.id);
-        }
-
-        function disconnectCall() {
-            if (currentCall) {
-                currentCall.close();
-                remoteVideo.srcObject = null;
-                socket.emit('leaveQueue');
+        // Function to initiate a random call
+        const startRandomCall = () => {
+            if (peer.id) {
+                signalingSocket.send(JSON.stringify({ type: 'ready', peerId: peer.id }));
+            } else {
+                console.log('Peer ID is not ready yet.');
             }
-        }
-
-        socket.on('disconnect', () => {
-            if (currentCall) {
-                currentCall.close();
-            }
-        });
-
+        };
     </script>
 </body>
 

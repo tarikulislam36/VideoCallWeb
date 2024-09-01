@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Call UI</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.2.7/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .bg-beige {
+      background-color: #f8f4e3; /* Custom beige background */
+    }
+
+    .video-container {
+      position: relative;
+      overflow: hidden;
+    }
+  </style>
+</head>
+
+<body class="bg-black flex items-center justify-center h-screen">
+  <div class="max-w-sm w-full h-full mx-auto bg-black text-white flex flex-col justify-between">
+    <!-- Header Buttons -->
+    <div class="flex justify-between items-center p-4">
+      <div class="flex space-x-2">
+        <button class="bg-gray-700 text-white py-1 px-3 rounded-full focus:outline-none">All</button>
+        <button class="bg-gray-700 text-white py-1 px-3 rounded-full focus:outline-none">Global</button>
+      </div>
+      <button class="text-white">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Video Area -->
+    <div class="flex-1 flex flex-col items-center">
+      <!-- Remote Video -->
+      <div class="video-container w-full h-1/2 mb-2">
+        <video id="remoteVideo" class="w-full h-full object-cover" autoplay playsinline></video>
+        <!-- Placeholder image if video is not available -->
+        <!-- <img src="your-video-placeholder.png" alt="Remote Video" class="w-full h-full object-cover" /> -->
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <h1 class="text-3xl font-bold text-orange-500">omegle</h1>
+          <p class="text-white mt-2">Finding an available...</p>
+          <div class="flex mt-2 space-x-1">
+            <!-- Loading indicator dots -->
+            <div class="h-2 w-2 bg-blue-500 rounded-full animate-bounce"></div>
+            <div class="h-2 w-2 bg-red-500 rounded-full animate-bounce delay-100"></div>
+            <div class="h-2 w-2 bg-green-500 rounded-full animate-bounce delay-200"></div>
+            <div class="h-2 w-2 bg-yellow-500 rounded-full animate-bounce delay-300"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Local Video -->
+      <div class="video-container w-full h-1/2">
+        <video id="localVideo" class="w-full h-full object-cover" autoplay muted playsinline></video>
+        <!-- Placeholder image if video is not available -->
+        <!-- <img src="your-video-placeholder.png" alt="Local Video" class="w-full h-full object-cover" /> -->
+      </div>
+    </div>
+
+    <!-- Footer Buttons -->
+    <div class="bg-gray-800 flex justify-between items-center p-4">
+      <button class="flex items-center text-white">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m4-4H9m4 8H9m10 8H4V4m16 0v16z" />
+        </svg>
+        Message...
+      </button>
+      <button class="bg-red-600 text-white py-2 px-4 rounded-full focus:outline-none">Stop</button>
+    </div>
+  </div>
+</body>
+
+</html>
