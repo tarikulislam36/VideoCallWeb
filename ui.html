@@ -3,183 +3,176 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Video Call UI</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Random Video Chat</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.2.7/dist/tailwind.min.css" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/6.1.4/adapter.js" integrity="sha512-r8cn1OoZ21KHc0zmav3+MtQS24AJLAaDdNNWYkOborAznLETtfBKMb6xkpqXnjcH1GmKG9BqPOW9tU/Jzy98kQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  
+
   <style>
-    .bg-beige {
-      background-color: #f8f4e3; /* Custom beige background */
+    /* Updated Background Color */
+    .custom-bg {
+      background-color: #eef2f7;
     }
 
-    .video-container {
+    .video-box {
       position: relative;
       overflow: hidden;
     }
   </style>
 </head>
 
-<body class="bg-black flex items-center justify-center h-screen">
-  <div class="max-w-sm w-full h-full mx-auto bg-black text-white flex flex-col justify-between">
-    <!-- Header Buttons -->
-    <div class="flex justify-between items-center p-4">
-      <div class="flex space-x-2">
-        <button class="bg-gray-700 text-white py-1 px-3 rounded-full focus:outline-none">All</button>
-        <button class="bg-gray-700 text-white py-1 px-3 rounded-full focus:outline-none">Global</button>
+<body class="custom-bg flex items-center justify-center min-h-screen">
+  <div class="max-w-md w-full h-full bg-gray-900 text-white flex flex-col justify-between">
+    <!-- Top Menu Buttons -->
+    <div class="flex justify-between p-4">
+      <div class="flex gap-3">
+        <button class="bg-gray-600 text-white py-1 px-4 rounded focus:outline-none">Connect</button>
+        <button class="bg-gray-600 text-white py-1 px-4 rounded focus:outline-none">Switch</button>
       </div>
-      <button class="text-white">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+      <button>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6h18M3 12h18m-7 6h7" />
         </svg>
       </button>
     </div>
 
-    <!-- Video Area -->
+    <!-- Video Display Area -->
     <div class="flex-1 flex flex-col items-center">
-      <!-- Remote Video -->
-      <div class="video-container w-full h-1/2 mb-2">
-        <video id="remoteVideo" class="w-full h-full object-cover" autoplay playsinline></video>
-        <!-- Placeholder image if video is not available -->
-        <!-- <img src="your-video-placeholder.png" alt="Remote Video" class="w-full h-full object-cover" /> -->
-        <div class="absolute inset-0 flex flex-col items-center justify-center" id="LoadScreen">
-          <h1 class="text-3xl font-bold text-orange-500">omegle</h1>
-          <p class="text-white mt-2">Finding an available...</p>
-          <div class="flex mt-2 space-x-1">
-            <!-- Loading indicator dots -->
-            <div class="h-2 w-2 bg-blue-500 rounded-full animate-bounce"></div>
-            <div class="h-2 w-2 bg-red-500 rounded-full animate-bounce delay-100"></div>
-            <div class="h-2 w-2 bg-green-500 rounded-full animate-bounce delay-200"></div>
-            <div class="h-2 w-2 bg-yellow-500 rounded-full animate-bounce delay-300"></div>
+      <!-- Video for Remote User -->
+      <div class="video-box w-full h-1/2 mb-3">
+        <video id="peerVideo" class="w-full h-full object-cover" autoplay playsinline></video>
+        <div class="absolute inset-0 flex flex-col items-center justify-center" id="connectingScreen">
+          <h2 class="text-3xl font-semibold text-yellow-500">Connecting...</h2>
+          <p class="text-gray-300 mt-3">Waiting for the other user...</p>
+          <div class="flex gap-2 mt-2">
+            <div class="h-3 w-3 bg-red-500 rounded-full animate-bounce"></div>
+            <div class="h-3 w-3 bg-green-500 rounded-full animate-bounce delay-100"></div>
+            <div class="h-3 w-3 bg-blue-500 rounded-full animate-bounce delay-200"></div>
           </div>
         </div>
       </div>
 
-      <!-- Local Video -->
-      <div class="video-container w-full h-1/2">
-        <video id="localVideo" class="w-full h-full object-cover" autoplay muted playsinline></video>
-        <!-- Placeholder image if video is not available -->
-        <!-- <img src="your-video-placeholder.png" alt="Local Video" class="w-full h-full object-cover" /> -->
+      <!-- Local User Video -->
+      <div class="video-box w-full h-1/2">
+        <video id="myVideo" class="w-full h-full object-cover" autoplay muted playsinline></video>
       </div>
     </div>
 
-    <!-- Footer Buttons -->
-    <div class="flex justify-between items-center p-4 ">
-      <button class="flex items-center text-white">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m4-4H9m4 8H9m10 8H4V4m16 0v16z" />
+    <!-- Footer Controls -->
+    <div class="flex justify-between items-center p-4">
+      <button class="text-white flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5v14" />
         </svg>
-        Message...
+        Message
       </button>
-      <button class="bg-red-600 text-white py-2 px-4 rounded-full focus:outline-none" onclick="nextCall()">Stop</button>
-    </div>
-    <div class="flex justify-center items-center mt-4">
-      <code class="text-white"></code>
+      <button class="bg-red-500 text-white py-2 px-6 rounded-full" onclick="disconnectCall()">End</button>
     </div>
   </div>
+
+  <!-- External Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
   <script>
-    const socket = new WebSocket('wss:test.findnewcars.com:9860');
-    let localStream;
-    let peer;
-    let currentCall;
+    // Connection management and WebSocket setup
+    const ws = new WebSocket('wss:localhost:9000');
+    let localMediaStream;
+    let peerConnection;
+    let currentConnection;
 
-    socket.onopen = () => {
-        console.log('WebSocket connection established');
-        initializePeer();
+    ws.onopen = () => {
+      console.log('WebSocket connection opened.');
+      initializeConnection();
     };
 
-    socket.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        if (message.type === 'ConnectToPeer') {
-            callPeer(message.UserID);
-        } else if (message.type === 'NextCall') {
-            resetCall(); // Reset for both users
-            findNewUser(); // Find a new user to connect to
-        }
+    ws.onmessage = (msg) => {
+      const data = JSON.parse(msg.data);
+      if (data.action === 'JoinPeer') {
+        establishCall(data.peerID);
+      } else if (data.action === 'NextChat') {
+        resetSession();
+        searchForUser();
+      }
     };
 
-    function initializePeer() {
-        peer = new Peer();
+    // Initialize PeerJS connection
+    function initializeConnection() {
+      peerConnection = new Peer();
 
-        peer.on('open', (id) => {
-            console.log('My peer ID is: ' + id);
-            socket.send(JSON.stringify({ type: 'NewUser', UserID: id }));
-            // Initialize the local stream when the peer connection is opened
-            initializeLocalStream();
-        });
+      peerConnection.on('open', (id) => {
+        console.log('Connected with peer ID:', id);
+        ws.send(JSON.stringify({ action: 'NewUser', peerID: id }));
+        initializeLocalStream();
+      });
 
-        peer.on('call', (call) => {
-            answerCall(call);
-        });
+      peerConnection.on('call', (incomingCall) => {
+        respondToCall(incomingCall);
+      });
 
-        peer.on('error', (error) => {
-            console.error('Peer error:', error);
-        });
+      peerConnection.on('error', (err) => {
+        console.error('PeerJS Error:', err);
+      });
     }
 
+    // Access webcam and microphone for local stream
     function initializeLocalStream() {
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-            .then((stream) => {
-                localStream = stream;
-                document.getElementById('localVideo').srcObject = localStream;
-            })
-            .catch((err) => console.error('Failed to get local stream', err));
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then((stream) => {
+          localMediaStream = stream;
+          document.getElementById('myVideo').srcObject = localMediaStream;
+        })
+        .catch((err) => console.error('Media access error:', err));
     }
 
-    function answerCall(call) {
-        call.answer(localStream); // Use the already initialized local stream
+    function respondToCall(incomingCall) {
+      incomingCall.answer(localMediaStream);
 
-        call.on('stream', (remoteStream) => {
-            document.getElementById('remoteVideo').srcObject = remoteStream;
-            document.getElementById('LoadScreen').style.display = 'none'; // Hide loading screen
-        });
+      incomingCall.on('stream', (remoteStream) => {
+        document.getElementById('peerVideo').srcObject = remoteStream;
+        document.getElementById('connectingScreen').style.display = 'none';
+      });
 
-        call.on('close', () => {
-            console.log('Call ended');
-            resetCall();
-        });
+      incomingCall.on('close', () => {
+        console.log('Call ended.');
+        resetSession();
+      });
 
-        currentCall = call;
+      currentConnection = incomingCall;
     }
 
-    function callPeer(peerId) {
-        console.log('Calling peer:', peerId);
-        currentCall = peer.call(peerId, localStream);
+    function establishCall(peerId) {
+      console.log('Initiating call with:', peerId);
+      currentConnection = peerConnection.call(peerId, localMediaStream);
 
-        currentCall.on('stream', (remoteStream) => {
-            document.getElementById('remoteVideo').srcObject = remoteStream;
-        });
+      currentConnection.on('stream', (remoteStream) => {
+        document.getElementById('peerVideo').srcObject = remoteStream;
+      });
 
-        currentCall.on('close', () => {
-            console.log('Call ended');
-            resetCall();
-        });
+      currentConnection.on('close', () => {
+        console.log('Connection closed.');
+        resetSession();
+      });
     }
 
-    function nextCall() {
-        if (currentCall) {
-            currentCall.close(); // Close the current call
-        }
-        resetCall();  // Reset remote video elements after closing the call
-        socket.send(JSON.stringify({ type: 'NextCall', UserID: peer.id }));
+    function disconnectCall() {
+      if (currentConnection) {
+        currentConnection.close();
+      }
+      resetSession();
+      ws.send(JSON.stringify({ action: 'EndChat', peerID: peerConnection.id }));
     }
 
-    function resetCall() {
-        document.getElementById('remoteVideo').srcObject = null; // Only reset remote video
-        currentCall = null;
+    function resetSession() {
+      document.getElementById('peerVideo').srcObject = null;
+      currentConnection = null;
     }
 
-    function findNewUser() {
-        // Logic to find a new user to connect to
-        socket.send(JSON.stringify({ type: 'FindNewUser', UserID: peer.id }));
+    function searchForUser() {
+      ws.send(JSON.stringify({ action: 'FindUser', peerID: peerConnection.id }));
     }
-</script>
-
-</script>
+  </script>
 
 </body>
 
